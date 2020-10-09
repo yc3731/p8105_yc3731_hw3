@@ -1,0 +1,59 @@
+---
+title: "hw3"
+author: "Yue Chen"
+date: "10/6/2020"
+output: github_document
+---
+
+## Problem 1
+```{r}
+library(p8105.datasets)
+data("instacart")
+```
+
+
+```{r}
+instacart %>%
+  count(aisle) %>%
+  arrange(desc(n))
+```
+There are 134 aisles. The most ordered aisles are fresh vegetables, fresh fruits, and packaged vegetable fruits.
+
+Make a plot that shows the number of items ordered in each aisle, limiting this to aisles with more than 10000 items ordered. Arrange aisles sensibly, and organize your plot so others can read it.
+```{r}
+instacart %>%
+  count(aisle) %>%
+  filter(n > 10000) %>%
+  mutate(
+    aisle = factor(aisle),
+    aisle = fct_reorder(aisle, n)
+  )%>%
+  ggplot(aes(x=aisle, y=n)) + 
+  geom_point() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+```
+
+Make a table showing the three most popular items in each of the aisles “baking ingredients”, “dog food care”, and “packaged vegetables fruits”. Include the number of times each item is ordered in your table.
+```{r}
+instacart %>%
+  filter(aisle %in% c("baking ingredient", "dog food care", "packaged vegetables fruits")) %>%
+  count(product_name) %>%
+  group_by(aisle) %>%
+  mutate(rank = min_rank(desc(n))) %>%
+  filter(rank( < 4)) %><%
+  arrange(aisle, rank) %>%
+  knitr::kable()
+```
+
+Make a table showing the mean hour of the day at which Pink Lady Apples and Coffee Ice Cream are ordered on each day of the week; format this table for human readers.
+```{r}
+instacart %>%
+  filter(product_name, %in% c("Pink Lady Apples", "Coffee Ice Cream")) %>%
+  group_by(product_name) %>%
+  summarize(mean_hour = mean(order_hour_of_day)) %>%
+  pivot_wider(
+    names_from = order_dow,
+    values_from = mean_hour
+  )
+```
+
