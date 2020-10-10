@@ -12,6 +12,7 @@ library(patchwork)
 library(ggplot2)
 library(scales)
 library(hexbin)
+library(magrittr)
 ```
 
 ## Problem 1

@@ -47,7 +47,19 @@ library(scales)
 
 ``` r
 library(hexbin)
+library(magrittr)
 ```
+
+    ## 
+    ## Attaching package: 'magrittr'
+
+    ## The following object is masked from 'package:purrr':
+    ## 
+    ##     set_names
+
+    ## The following object is masked from 'package:tidyr':
+    ## 
+    ##     extract
 
 ## Problem 1
 
