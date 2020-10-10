@@ -10,6 +10,8 @@ library(tidyverse)
 library(ggridges)
 library(patchwork)
 library(ggplot2)
+library(scales)
+library(hexbin)
 ```
 
 ## Problem 1
@@ -90,10 +92,8 @@ accel_data = read_csv("./accel_data.csv") %>%
   mutate(
     week = as.integer(week),
     day_id = as.integer(day_id),
-    day = as.factor(day), 
     activity = as.integer(activity),
-    count = as.numeric(count),
-    weekday = as.logical(weekday)
+    count = as.numeric(count)
   )
 
 ```
@@ -112,7 +112,119 @@ accel_data %>%
 
 It is hard to see a trend from the table.
 
-```{r}
+Make a single-panel plot that shows the 24-hour activity time courses for each day and use color to indicate day of the week. 
 
+```{r}
+accel_data %>%
+  mutate(
+    hour = activity / 60
+  ) %>%
+  group_by(hour, week, day, day_id) %>%
+  summarise(activity_hour = sum(count)) %>%
+  ggplot(aes(x = hour, y = activity_hour, color = day)) +
+  geom_point(alpha = 0.6) +
+  labs(
+    title = "24-hour activity time courses for each day",
+    x = "hour",
+    y = "activity count in minutes"
+  ) 
 ```
+The patient is generally active at 6-7am on Thursdays, 11-12am on Sundays, 4-5pm on Saturdays, and 8-10pm on Fridays.The most vigorous activity happened on a Wednesday at 7-8pm.
+
+## Problem 3
+```{r}
+library(p8105.datasets)
+data("ny_noaa")
+```
+
+The dataset contains `r nrow(ny_noaa)` rows and `r ncol(ny_noaa)` columns. The variables are `r names(ny_noaa)`. 
+
+There are `r sum(is.na(ny_noaa$snwd))` missing values in snow depth, accounting for `r percent(sum(is.na(ny_noaa$snwd)) / nrow(ny_noaa))` of all observations.
+
+There are `r sum(is.na(ny_noaa$tmax))` missing values in maximum temperature, accounting for `r percent(sum(is.na(ny_noaa$tmax)) / nrow(ny_noaa))` of all observations.
+
+There are `r sum(is.na(ny_noaa$tmin))` missing values in minimum temperature, accounting for `r percent(sum(is.na(ny_noaa$tmin)) / nrow(ny_noaa))` of all observations.
+
+Data cleaning. Create separate variables for year, month, and day. Ensure observations for temperature, precipitation, and snowfall are given in reasonable units. 
+```{r}
+ny_noaa = 
+ny_noaa %>%
+  janitor::clean_names() %>%
+  separate(col = date, into = c("year", "month", "day")) %>%
+  mutate(
+    year = as.integer(year),
+    month = as.integer(month),
+    day = as.integer(day),
+    month = month.name[month],
+    prcp = as.numeric(prcp, na.rm = T) / 10,
+    tmax = as.numeric(tmax, na.rm = T) / 10,
+    tmin = as.numeric(tmin, na.rm = T) / 10
+  )
+```
+```{r}
+ny_noaa %>%
+  group_by(snow) %>%
+  summarise(n = n()) %>%
+  filter(min_rank(desc(n)) < 2)
+```
+
+The most observed value in snowfall is 0 because New York state has way less snow days than days without snow.
+
+Make a two-panel plot showing the average max temperature in January and in July in each station across years.
+
+```{r}
+ny_noaa %>% 
+  filter(month%in% c("January", "July")) %>% 
+  group_by(id, year, month) %>% 
+  summarise(tmax_mean = mean(tmax)) %>% 
+  ggplot(aes(x = year, y = tmax_mean, color = id, group = id)) +
+  geom_point(alpha = 0.5) +
+  geom_line(alpha = 0.2) +
+  facet_grid(~ month) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 0.5, vjust = 0.5,size = 7),legend.position = "none")+
+  labs(
+    title = "Average max temperature in January and July in each station across years",
+    x = "Year",
+    y = "Average max temperature in Celsius"
+  )
+```
+In general, the average max temperature in January is lower than that in July. There is a greater fluctuation of average max temperature in January than that in July.
+
+Some outliers are Jan 1982, Jul 1988, Jul 2004, and Jul 2007.
+
+Make a two-panel plot showing (i) tmax vs tmin for the full dataset (note that a scatterplot may not be the best option); and (ii) make a plot showing the distribution of snowfall values greater than 0 and less than 100 separately by year.
+
+```{r}
+plot1 = 
+  ny_noaa %>%
+  ggplot(
+    aes(x = tmax, y = tmin)) + 
+  geom_hex() + 
+  geom_smooth() + 
+  labs(
+    title = "max vs min temperatures",
+    x = "max temperature in Celsius", 
+    y = "min temperature in Celcius", 
+    caption = "Data from rnoaa package"
+  ) 
+
+plot2 = 
+  ny_noaa %>%
+  filter(snow > 0 & snow < 100) %>%
+  ggplot(
+    aes(x = snow, y = as.factor(year))
+  ) + 
+  geom_density_ridges() + 
+  labs(
+    title = "distribution of snowfall by year", 
+    x = "snowfall in mm", 
+    y = "year",
+    caption = "Data from rnoaa package"
+  )
+
+two_panel_plot = plot1 + plot2
+
+two_panel_plot
+```
+
 

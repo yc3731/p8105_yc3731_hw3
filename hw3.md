@@ -31,6 +31,22 @@ library(patchwork)
 
 ``` r
 library(ggplot2)
+library(scales)
+```
+
+    ## 
+    ## Attaching package: 'scales'
+
+    ## The following object is masked from 'package:purrr':
+    ## 
+    ##     discard
+
+    ## The following object is masked from 'package:readr':
+    ## 
+    ##     col_factor
+
+``` r
+library(hexbin)
 ```
 
 ## Problem 1
@@ -160,10 +176,8 @@ accel_data = read_csv("./accel_data.csv") %>%
   mutate(
     week = as.integer(week),
     day_id = as.integer(day_id),
-    day = as.factor(day), 
     activity = as.integer(activity),
-    count = as.numeric(count),
-    weekday = as.logical(weekday)
+    count = as.numeric(count)
   )
 ```
 
@@ -192,40 +206,197 @@ accel_data %>%
 
 | day\_id | day       | weekday | daily\_count |
 | ------: | :-------- | :------ | -----------: |
-|       1 | Friday    | NA      |    480542.62 |
-|       2 | Monday    | NA      |     78828.07 |
-|       3 | Saturday  | NA      |    376254.00 |
-|       4 | Sunday    | NA      |    631105.00 |
-|       5 | Thursday  | NA      |    355923.64 |
-|       6 | Tuesday   | NA      |    307094.24 |
-|       7 | Wednesday | NA      |    340115.01 |
-|       8 | Friday    | NA      |    568839.00 |
-|       9 | Monday    | NA      |    295431.00 |
-|      10 | Saturday  | NA      |    607175.00 |
-|      11 | Sunday    | NA      |    422018.00 |
-|      12 | Thursday  | NA      |    474048.00 |
-|      13 | Tuesday   | NA      |    423245.00 |
-|      14 | Wednesday | NA      |    440962.00 |
-|      15 | Friday    | NA      |    467420.00 |
-|      16 | Monday    | NA      |    685910.00 |
-|      17 | Saturday  | NA      |    382928.00 |
-|      18 | Sunday    | NA      |    467052.00 |
-|      19 | Thursday  | NA      |    371230.00 |
-|      20 | Tuesday   | NA      |    381507.00 |
-|      21 | Wednesday | NA      |    468869.00 |
-|      22 | Friday    | NA      |    154049.00 |
-|      23 | Monday    | NA      |    409450.00 |
-|      24 | Saturday  | NA      |      1440.00 |
-|      25 | Sunday    | NA      |    260617.00 |
-|      26 | Thursday  | NA      |    340291.00 |
-|      27 | Tuesday   | NA      |    319568.00 |
-|      28 | Wednesday | NA      |    434460.00 |
-|      29 | Friday    | NA      |    620860.00 |
-|      30 | Monday    | NA      |    389080.00 |
-|      31 | Saturday  | NA      |      1440.00 |
-|      32 | Sunday    | NA      |    138421.00 |
-|      33 | Thursday  | NA      |    549658.00 |
-|      34 | Tuesday   | NA      |    367824.00 |
-|      35 | Wednesday | NA      |    445366.00 |
+|       1 | Friday    | Weekday |    480542.62 |
+|       2 | Monday    | Weekday |     78828.07 |
+|       3 | Saturday  | Weekend |    376254.00 |
+|       4 | Sunday    | Weekend |    631105.00 |
+|       5 | Thursday  | Weekday |    355923.64 |
+|       6 | Tuesday   | Weekday |    307094.24 |
+|       7 | Wednesday | Weekday |    340115.01 |
+|       8 | Friday    | Weekday |    568839.00 |
+|       9 | Monday    | Weekday |    295431.00 |
+|      10 | Saturday  | Weekend |    607175.00 |
+|      11 | Sunday    | Weekend |    422018.00 |
+|      12 | Thursday  | Weekday |    474048.00 |
+|      13 | Tuesday   | Weekday |    423245.00 |
+|      14 | Wednesday | Weekday |    440962.00 |
+|      15 | Friday    | Weekday |    467420.00 |
+|      16 | Monday    | Weekday |    685910.00 |
+|      17 | Saturday  | Weekend |    382928.00 |
+|      18 | Sunday    | Weekend |    467052.00 |
+|      19 | Thursday  | Weekday |    371230.00 |
+|      20 | Tuesday   | Weekday |    381507.00 |
+|      21 | Wednesday | Weekday |    468869.00 |
+|      22 | Friday    | Weekday |    154049.00 |
+|      23 | Monday    | Weekday |    409450.00 |
+|      24 | Saturday  | Weekend |      1440.00 |
+|      25 | Sunday    | Weekend |    260617.00 |
+|      26 | Thursday  | Weekday |    340291.00 |
+|      27 | Tuesday   | Weekday |    319568.00 |
+|      28 | Wednesday | Weekday |    434460.00 |
+|      29 | Friday    | Weekday |    620860.00 |
+|      30 | Monday    | Weekday |    389080.00 |
+|      31 | Saturday  | Weekend |      1440.00 |
+|      32 | Sunday    | Weekend |    138421.00 |
+|      33 | Thursday  | Weekday |    549658.00 |
+|      34 | Tuesday   | Weekday |    367824.00 |
+|      35 | Wednesday | Weekday |    445366.00 |
 
 It is hard to see a trend from the table.
+
+Make a single-panel plot that shows the 24-hour activity time courses
+for each day and use color to indicate day of the week.
+
+``` r
+accel_data %>%
+  mutate(
+    hour = activity / 60
+  ) %>%
+  group_by(hour, week, day, day_id) %>%
+  summarise(activity_hour = sum(count)) %>%
+  ggplot(aes(x = hour, y = activity_hour, color = day)) +
+  geom_point(alpha = 0.6) +
+  labs(
+    title = "24-hour activity time courses for each day",
+    x = "hour",
+    y = "activity count in minutes"
+  ) 
+```
+
+![](hw3_files/figure-gfm/unnamed-chunk-9-1.png)<!-- --> The patient is
+generally active at 6-7am on Thursdays, 11-12am on Sundays, 4-5pm on
+Saturdays, and 8-10pm on Fridays.The most vigorous activity happened on
+a Wednesday at 7-8pm.
+
+## Problem 3
+
+``` r
+library(p8105.datasets)
+data("ny_noaa")
+```
+
+The dataset contains 2595176 rows and 7 columns. The variables are id,
+date, prcp, snow, snwd, tmax, tmin.
+
+There are 591786 missing values in snow depth, accounting for 22.8% of
+all observations.
+
+There are 1134358 missing values in maximum temperature, accounting for
+43.7% of all observations.
+
+There are 1134420 missing values in minimum temperature, accounting for
+43.7% of all observations.
+
+Data cleaning. Create separate variables for year, month, and day.
+Ensure observations for temperature, precipitation, and snowfall are
+given in reasonable units.
+
+``` r
+ny_noaa = 
+ny_noaa %>%
+  janitor::clean_names() %>%
+  separate(col = date, into = c("year", "month", "day")) %>%
+  mutate(
+    year = as.integer(year),
+    month = as.integer(month),
+    day = as.integer(day),
+    month = month.name[month],
+    prcp = as.numeric(prcp, na.rm = T) / 10,
+    tmax = as.numeric(tmax, na.rm = T) / 10,
+    tmin = as.numeric(tmin, na.rm = T) / 10
+  )
+```
+
+``` r
+ny_noaa %>%
+  group_by(snow) %>%
+  summarise(n = n()) %>%
+  filter(min_rank(desc(n)) < 2)
+```
+
+    ## # A tibble: 1 x 2
+    ##    snow       n
+    ##   <int>   <int>
+    ## 1     0 2008508
+
+The most observed value in snowfall is 0 because New York state has way
+less snow days than days without snow.
+
+Make a two-panel plot showing the average max temperature in January and
+in July in each station across years.
+
+``` r
+ny_noaa %>% 
+  filter(month%in% c("January", "July")) %>% 
+  group_by(id, year, month) %>% 
+  summarise(tmax_mean = mean(tmax)) %>% 
+  ggplot(aes(x = year, y = tmax_mean, color = id, group = id)) +
+  geom_point(alpha = 0.5) +
+  geom_line(alpha = 0.2) +
+  facet_grid(~ month) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 0.5, vjust = 0.5,size = 7),legend.position = "none")+
+  labs(
+    title = "Average max temperature in January and July in each station across years",
+    x = "Year",
+    y = "Average max temperature in Celsius"
+  )
+```
+
+    ## Warning: Removed 7058 rows containing missing values (geom_point).
+
+    ## Warning: Removed 6007 rows containing missing values (geom_path).
+
+![](hw3_files/figure-gfm/unnamed-chunk-13-1.png)<!-- --> In general, the
+average max temperature in January is lower than that in July. There is
+a greater fluctuation of average max temperature in January than that in
+July.
+
+Some outliers are Jan 1982, Jul 1988, Jul 2004, and Jul 2007.
+
+Make a two-panel plot showing (i) tmax vs tmin for the full dataset
+(note that a scatterplot may not be the best option); and (ii) make a
+plot showing the distribution of snowfall values greater than 0 and less
+than 100 separately by year.
+
+``` r
+plot1 = 
+  ny_noaa %>%
+  ggplot(
+    aes(x = tmax, y = tmin)) + 
+  geom_hex() + 
+  geom_smooth() + 
+  labs(
+    title = "max vs min temperatures",
+    x = "max temperature in Celsius", 
+    y = "min temperature in Celcius", 
+    caption = "Data from rnoaa package"
+  ) 
+
+plot2 = 
+  ny_noaa %>%
+  filter(snow > 0 & snow < 100) %>%
+  ggplot(
+    aes(x = snow, y = as.factor(year))
+  ) + 
+  geom_density_ridges() + 
+  labs(
+    title = "distribution of snowfall by year", 
+    x = "snowfall in mm", 
+    y = "year",
+    caption = "Data from rnoaa package"
+  )
+
+two_panel_plot = plot1 + plot2
+
+two_panel_plot
+```
+
+    ## Warning: Removed 1136276 rows containing non-finite values (stat_binhex).
+
+    ## `geom_smooth()` using method = 'gam' and formula 'y ~ s(x, bs = "cs")'
+
+    ## Warning: Removed 1136276 rows containing non-finite values (stat_smooth).
+
+    ## Picking joint bandwidth of 3.76
+
+![](hw3_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
