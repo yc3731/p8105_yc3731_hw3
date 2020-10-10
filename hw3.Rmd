@@ -5,13 +5,22 @@ date: "10/6/2020"
 output: github_document
 ---
 
+```{r}
+library(tidyverse)
+library(ggridges)
+library(patchwork)
+library(ggplot2)
+```
+
 ## Problem 1
 ```{r}
 library(p8105.datasets)
 data("instacart")
 ```
+The dataset contains `r nrow(instacart)` rows and `r ncol(instacart)` columns. 
+Observations are the level of items in orders by user. There are user / order variables - user ID, order ID, order day, and order hour. There are also item variables - name, aisle, department, and some numeric codes.
 
-
+How many aisles are there, and which aisles are the most items ordered from?
 ```{r}
 instacart %>%
   count(aisle) %>%
@@ -27,8 +36,8 @@ instacart %>%
   mutate(
     aisle = factor(aisle),
     aisle = fct_reorder(aisle, n)
-  )%>%
-  ggplot(aes(x=aisle, y=n)) + 
+  ) %>%
+  ggplot(aes(x = aisle, y = n)) + 
   geom_point() +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
 ```
@@ -37,10 +46,10 @@ Make a table showing the three most popular items in each of the aisles “bakin
 ```{r}
 instacart %>%
   filter(aisle %in% c("baking ingredient", "dog food care", "packaged vegetables fruits")) %>%
-  count(product_name) %>%
   group_by(aisle) %>%
+  count(product_name) %>%
   mutate(rank = min_rank(desc(n))) %>%
-  filter(rank( < 4)) %><%
+  filter(rank < 4) %>%
   arrange(aisle, rank) %>%
   knitr::kable()
 ```
@@ -48,12 +57,62 @@ instacart %>%
 Make a table showing the mean hour of the day at which Pink Lady Apples and Coffee Ice Cream are ordered on each day of the week; format this table for human readers.
 ```{r}
 instacart %>%
-  filter(product_name, %in% c("Pink Lady Apples", "Coffee Ice Cream")) %>%
-  group_by(product_name) %>%
+  filter(product_name %in% c("Pink Lady Apples", "Coffee Ice Cream")) %>%
+  group_by(product_name, order_dow) %>%
   summarize(mean_hour = mean(order_hour_of_day)) %>%
   pivot_wider(
     names_from = order_dow,
     values_from = mean_hour
+  ) %>%
+  knitr::kable()
+
+```
+
+## Problem 2
+```{r}
+accel_data = read_csv("./accel_data.csv") %>%
+  janitor::clean_names() %>%
+  mutate(
+    weekday = recode(day, 
+                     "Monday" = "Weekday", 
+                     "Tuesday" = "Weekday", 
+                     "Wednesday" = "Weekday", 
+                     "Thursday" = "Weekday", 
+                     "Friday" = "Weekday", 
+                     "Saturday" = "Weekend",
+                     "Sunday" = "Weekend")) %>%
+  pivot_longer(
+    activity_1:activity_1440,
+    names_to = "activity",
+    names_prefix = "activity_", 
+    values_to = "count"
+  ) %>%
+  mutate(
+    week = as.integer(week),
+    day_id = as.integer(day_id),
+    day = as.factor(day), 
+    activity = as.integer(activity),
+    count = as.numeric(count),
+    weekday = as.logical(weekday)
   )
+
+```
+
+In the resulting dataset, there are `r nrow(accel_data)` observations and the following variables: `r names(accel_data)`. 
+
+Using your tidied dataset, aggregate accross minutes to create a total activity variable for each day, and create a table showing these totals. 
+```{r}
+accel_data %>%
+  group_by(day_id, day, weekday) %>%
+  summarise(
+    daily_count = sum(count)
+  ) %>%
+  knitr::kable()
+```
+
+It is hard to see a trend from the table.
+
+```{r}
+
 ```
 
