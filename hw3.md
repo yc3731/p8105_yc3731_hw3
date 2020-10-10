@@ -338,6 +338,7 @@ Make a two-panel plot showing the average max temperature in January and
 in July in each station across years.
 
 ``` r
+plot = 
 ny_noaa %>% 
   filter(month%in% c("January", "July")) %>% 
   group_by(id, year, month) %>% 
@@ -352,6 +353,8 @@ ny_noaa %>%
     x = "Year",
     y = "Average max temperature in Celsius"
   )
+
+plot
 ```
 
     ## Warning: Removed 7058 rows containing missing values (geom_point).
